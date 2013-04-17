@@ -1,0 +1,1502 @@
+<?php
+/* vim: set filetype=php expandtab tabstop=2 shiftwidth=2: */
+/**
+ * Display help and module information
+ * @param path which path of the site we're displaying help
+ * @param arg array that holds the current path as would be returned from arg() function
+ * @return help text for the path
+ */
+function simpletest_help($path, $arg) {
+  $output = '';  //declare your output variable
+  switch ($path) {
+    case "admin/help#simpletest":
+      $output = '<p>'.  t("Displays all created tests") .'</p>';
+      break;
+  }
+  return $output;
+} // function simpletest_help
+
+/**
+ * Valid permissions for this module
+ * @return array An array of valid permissions for the onthisdate module
+ */
+function simpletest_perm() {
+  return array('access simpletest content',
+               'create simpletest',
+               'edit own simpletest');
+} // function simpletest_perm()
+
+/**
+ * Function replaces patterns in output according to json,
+ * stored in simpletest_replacements variable
+ */
+function filter_output($input) {
+  // This adds to all elements with #mimetex id Vertical-align property
+  drupal_add_js(drupal_get_path('module', 'simpletest') . '/mimetex-vertical-align.js');
+  // Get JSON with replacements from settings
+  $json = variable_get('simpletest_replacements', '');
+  $repls = json_decode($json);
+  foreach($repls as $from => $to) {
+    $input = str_replace($from, $to, $input);
+  }
+  return $input;
+} // function filter_output($input)
+/**
+ * Implementation of hook_menu()
+ */
+function simpletest_menu() {
+  $items['admin/settings/simpletest'] = array(
+    'title' => t('SimpleTest'),
+    'description' => t('Change SimpleTest settings'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('simpletest_admin_form'),
+    'access arguments' => array('administer site configuration'),
+  );
+  /**
+   * Page with test, authorization etc.
+   */
+  $items['simpletest/%'] = array(
+    'title' => t('SimleTest'),
+    'description' => t('SimpleTest'),
+    'page callback' => 'simpletest_player',
+    'page arguments' => array(1),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  /**
+   * 1. Page with tests list.
+   */
+  $items['admin/settings/simpletest/tests'] = array(
+    'title' => t('Tests'),
+    'description' => t('Manage SimpleTest tests (add/remove/edit)'),
+    'page callback' => 'simpletest_tests',
+    'access arguments' => array('access administration pages'),
+  );
+  /**
+   * 1.1. Page with form for editing test
+   */
+  $items['admin/settings/simpletest/tests/edit/%'] = array(
+    'title' => t('SimpleTest edit test'),
+    'description' => t('SimpleTest edit test'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('simpletest_tests_edit_form', 5),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+  /**
+   * 1.2. Page with form for adding tests.
+   */
+  $items['admin/settings/simpletest/tests/add'] = array(
+    'title' => t('SimpleTest add test'),
+    'description' => t('SimpleTest add new test'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('simpletest_tests_add_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+  /**
+   * 1.3. Page with summary information about the tests,
+   *      all questions and answers, and buttons for
+   *      manipulations with them
+   */
+  $items['admin/settings/simpletest/tests/show/%'] = array(
+    'title' => t('SimpleTest test summary'),
+    'description' => t('SimpleTest test summary'),
+    'page callback' => 'simpletest_tests_show',
+    'page arguments' => array(5),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+  /**
+   * 1.4. Page for deleting test
+   */
+  $items['admin/settings/simpletest/tests/remove/%'] = array(
+    'title' => t('Do you really want to remove the test?'),
+    'description' => t('SimpleTest remove test'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('simpletest_tests_remove_form', 5),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+  /**
+   * 2.1. Page for editing questions
+   */
+  $items['admin/settings/simpletest/questions/edit/%'] = array(
+    'title' => t('Edit question'),
+    'description' => t('Simpletest edit question'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('simpletest_questions_edit_form', 5),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+  /**
+   * 2.2. Page for adding new question
+   */
+  $items['admin/settings/simpletest/questions/add/%'] = array(
+    'title' => t('Add new question'),
+    'description' => t('SimpleTest add new test'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('simpletest_questions_add_form', 5),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+  /**
+   * 2.4. Page with button for removing question
+   */
+  $items['admin/settings/simpletest/questions/remove/%'] = array(
+    'title' => 'Do you really want to remove the question?',
+    'description' => 'SimpleTest remove the question',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('simpletest_questions_remove_form', 5),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+  /**
+   * 3.1. Page with form for editing answer
+   */
+  $items['admin/settings/simpletest/answers/edit/%'] = array(
+    'title' => 'Edit the answer',
+    'description' => 'SimpleTest edit the answer for the question',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('simpletest_answers_edit_form', 5),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+  /**
+   * 3.2. Page with form for adding new answer to the question
+   */
+  $items['admin/settings/simpletest/answers/add/%'] = array(
+    'title' => 'Add new answer',
+    'description' => 'Simpletest add new answer to the questioni',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('simpletest_answers_add_form', 5),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+  /**
+   * 3.4. Page with button to confirm remove answer
+   */
+  $items['admin/settings/simpletest/answers/remove/%'] = array(
+    'title' => 'Do you really want to remove this answer?',
+    'description' => 'SimpleTest remove answer',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('simpletest_answers_remove_form', 5),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+  /**
+   * 4.2. Page with results for selected test
+   */
+  $items['simpletest/results/%'] = array(
+    'title' => t('Results for the test'),
+    'description' => t('SimpleTest results for the test'),
+    'page callback' => 'simpletest_results_test',
+    'page arguments' => array(2),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+  /**
+   * 4.3. Page with results for selected test only for one group
+   */
+  $items['simpletest/results/%/group/%'] = array(
+    'title' => t('Result for the test for group'),
+    'description' => t('SimpleTest result for the test for group'),
+    'page callback' => 'simpletest_results_test_by_group',
+    'page arguments' => array(4,6),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+  /**
+   * 4.4. Page with results for selected test only for user
+   */
+  $items['simpletest/results/%/user/%'] = array(
+    'title' => t('Result for the test for user'),
+    'description' => t('SimpleTest result for the test for user'),
+    'page callback' => 'simpletest_results_test_by_user',
+    'page arguments' => array(4,6),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  /**
+   * for testing purposes
+   * FIXME: remove this or do something
+   */
+  $items['view-settings'] = array(
+    'title' => 'View Configured Settings',
+    'page callback' => 'simpletest_view_conf',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+} // function simpletest_menu()
+/********************************
+ * BEGIN: (player) simpletest/% *
+ ********************************/
+/**
+ * This block describes function to interact with user
+ */
+
+/**
+ * Function decides what to do (show test, login form, finish page etc)
+ * @tid is the test id. It must be specified
+ */
+function simpletest_player($tid) {
+  // Getting test name and set it as a page title
+  $name = db_result(db_query("SELECT name FROM {simpletest_tests} WHERE id=%d", $tid));
+  drupal_set_title($name);
+  if(isset($_COOKIE['simpletest_session'])) {
+    // 1. Check if session is valid
+    $sessions_count = db_result(db_query(
+             "SELECT COUNT(*) FROM {simpletest_user_sessions}
+              WHERE hash='%s'
+              AND user_ip='%s'
+              AND user_agent='%s'",
+             $_COOKIE['simpletest_session'],
+             $_SERVER['REMOTE_ADDR'],
+             $_SERVER['HTTP_USER_AGENT']));
+    if($sessions_count > 0) {
+      // 1.1. If session is valid show test
+      $return = simpletest_player_test($tid);
+    } else { 
+      // 1.2. Else show login form
+      $return = drupal_get_form('simpletest_login_form');
+    }
+  } else {
+    // 1. Show login form
+    $return = drupal_get_form('simpletest_login_form');
+  }
+  return $return;
+} // function simpletest_player($tid)
+
+/**
+ * Function constructs login form
+ */
+function simpletest_login_form($form_state) {
+  $form['first_name'] = array(
+                            '#type'       => 'textfield',
+                            '#title'      => t("First name"),
+                            '#maxlength'  => 256,
+                           );
+  $form['last_name'] = array(
+                            '#type'       => 'textfield',
+                            '#title'      => t("Last name"),
+                            '#maxlength'  => 256,
+                           );
+  $form['group'] = array(
+                            '#type'       => 'textfield',
+                            '#title'      => t("Group"),
+                            '#maxlength'  => 3,
+                           );
+  $form['anti_bot'] = array(
+                            '#type'          => 'hidden',
+                            '#default_value' => 'Ололо, нет пути',
+                           );
+  $form['submit'] = array(
+                          '#type' => 'submit',
+                          '#value' => t('Login'),
+                         );
+  // Change value of "anti_bot" field to "anti_bot_string".
+  // Stupid bots can't javascript
+  drupal_add_js('
+if(Drupal.jsEnabled) {
+  $(document).ready(function() {
+    $("input[name=\'anti_bot\']").val("anti_bot_string");
+  });
+}', 'inline', 'footer');
+  return $form;
+} // function simpletest_login()
+
+/**
+ * Function validates input for login form
+ */
+function simpletest_login_form_validate($form, &$form_state) {
+  foreach(array('first_name', 'last_name', 'group') as $field) {
+    if($form_state['values'][$field] == '') {
+      form_set_error($field, t("Value must not be empty"));
+    }
+  }
+  if(! is_numeric($form_state['values']['group'])) {
+    form_set_error('group', t('Only numeric values are allowed'));
+  }
+  if($form_state['values']['anti_bot'] != 'anti_bot_string') {
+    form_set_error('anti_bot', t("You are the bot. I'm sorry :("));
+  }
+  try {
+    $users_count = db_result(db_query(
+                    "SELECT COUNT(*) FROM {simpletest_users}
+                     WHERE name='%s'
+                     AND last_name='%s'
+                     AND grp='%d'",
+                    $form_state['values']['first_name'],
+                    $form_state['values']['last_name'],
+                    $form_state['values']['group']));
+    if($users_count > 1) {
+      form_set_error('group', t("There is more than one user with this parameters. Contact the administrator"));
+    }
+  } catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+  }
+} // function simpletest_login_form_validate($form, &$form_state)
+
+/**
+ * Function submits login form
+ * It creates new user if it doesn't exist before
+ * If user exists it creates new session and sets cookie
+ */
+function simpletest_login_form_submit($form, &$form_state) {
+  try {
+    $users_count = db_result(db_query(
+                    "SELECT COUNT(*) FROM {simpletest_users}
+                     WHERE name='%s'
+                     AND last_name='%s'
+                     AND grp='%d'",
+                    $form_state['values']['first_name'],
+                    $form_state['values']['last_name'],
+                    $form_state['values']['group']));
+    //drupal_set_message(var_dump($users_count), 'error');
+    if($users_count == 1) {
+      $users = db_query(
+                    "SELECT id FROM {simpletest_users}
+                     WHERE name='%s'
+                     AND last_name='%s'
+                     AND grp='%d'",
+                    $form_state['values']['first_name'],
+                    $form_state['values']['last_name'],
+                    $form_state['values']['group']);
+      $user = db_fetch_object($users);
+      simpletest_create_session($user->id);
+    }
+    if($users_count == 0) {
+      $uid = simpletest_create_user($form_state['values']);
+      simpletest_create_session($uid);
+    }
+  } catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+  }
+} // function simpletest_login_form_submit($form, &$form_state)
+/**
+ * Function creates session for user and sets session cookie
+ */
+function simpletest_create_session($user_id) {
+  $hash = md5($user_id . $_SERVER['REMOTE_ADDR'] . $_SERVER['HTTP_USER_AGENT'] . ' this is the salt');
+  try {
+    // Remove all old sessions
+    db_query("DELETE FROM {simpletest_user_sessions} WHERE user_id='%s'", $user_id);
+    db_query("INSERT INTO {simpletest_user_sessions} (user_id, user_ip, user_agent, login_time, hash)
+              VALUES ('%s', '%s', '%s', '%s', '%s')",
+             $user_id,
+             $_SERVER['REMOTE_ADDR'],
+             $_SERVER['HTTP_USER_AGENT'],
+             date(DATE_RFC822),
+             $hash
+            );
+    setcookie('simpletest_session', $hash, time() + 31536000 * 25, '/');
+  } catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+  }
+} // function simpletest_create_session($user_id)
+/**
+ * Function creates new user
+ */
+function simpletest_create_user($params) {
+  try {
+    db_query("INSERT INTO {simpletest_users} (name, last_name, middle_name, year, grp)
+              VALUES ('%s', '%s', '%s', %d, '%s')",
+             $params['first_name'],
+             $params['last_name'],
+             '', // middle_name
+             0, // year
+             $params['group']);
+    $users = db_query(
+                    "SELECT id FROM {simpletest_users}
+                     WHERE name='%s'
+                     AND last_name='%s'
+                     AND grp='%d'",
+                    $params['first_name'],
+                    $params['last_name'],
+                    $params['group']);
+    $user = db_fetch_object($users);
+    return $user->id;
+  } catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+  }
+} // function simpletest_create_user($params)
+
+/**
+ * Function show the one question of the test with
+ * submit and skip buttons
+ */
+function simpletest_player_test($tid) {
+  $uid = db_result(db_query("SELECT user_id
+                             FROM {simpletest_user_sessions}
+                             WHERE hash='%s'", $_COOKIE['simpletest_session']));
+  $questions = db_query(
+                  "SELECT id
+                   FROM {simpletest_questions} WHERE test_id='%s'",
+                  $tid);
+  while($question = db_fetch_object($questions)) {
+    $count =  db_result(db_query(
+                  "SELECT COUNT(*)
+                   FROM {simpletest_user_progress}
+                   WHERE user_id='%s'
+                   AND question_id='%s'",
+                  $uid, $question->id));
+    if($count > 0) {
+      $state = db_result(db_query(
+                  "SELECT answer_state
+                   FROM {simpletest_user_progress}
+                   WHERE user_id='%s'
+                   AND question_id='%s'",
+                  $uid, $question->id));
+      switch($state) {
+        case 'skipped':
+          if(! isset($skipped)) $skipped = $question->id;
+          break;
+      }
+    } else {
+      if(! isset($unanswered)) $unanswered = $question->id;
+    }
+  }
+  if(isset($unanswered)) {
+    $out = drupal_get_form('simpletest_player_test_question', $unanswered);
+  } else {
+    if(isset($skipped)) {
+      $out = drupal_get_form('simpletest_player_test_question', $skipped);
+    } else {
+      $out = t("You finished this test!");
+    }
+  }
+  return $out;
+} // function simpletest_player_test($tid)
+
+/**
+ * Form with question and submit and skip buttons
+ */
+function simpletest_player_test_question($form_state, $qid) {
+  $question = db_result(db_query(
+                "SELECT question
+                 FROM {simpletest_questions}
+                 WHERE id='%s'", $qid));
+  $answers = db_query(
+               "SELECT id, answer
+                FROM {simpletest_answers}
+                WHERE question_id='%s'", $qid);
+  while($answer = db_fetch_object($answers)) {
+    $options[$answer->id] = filter_output($answer->answer);
+  }
+  $form['answer_id'] = array(
+                      '#type' => 'radios',
+                      '#title' => filter_output($question),
+                      '#options' => $options,
+                    );
+  $form['qid'] = array(
+                      '#type' => 'hidden',
+                      '#value' => $qid,
+                    );
+  $form['skip'] = array(
+                      '#type' => 'submit',
+                      '#value' => t('Skip'),
+                    );
+  $form['answer'] = array(
+                      '#type' => 'submit',
+                      '#value' => t('Answer'),
+                    );
+  return $form;
+} // function simpletest_player_test_question($form_state, $qid)
+
+/**
+ * validate function for the form
+ */
+function simpletest_player_test_question_validate($form, &$form_state) {
+  if(! is_numeric($form_state['values']['answer_id']) && 
+     $form_state['clicked_button']['#value'] == $form_state['values']['answer']) {
+    form_set_error('answer_id', t("You must select the answer"));
+  }
+} // function simpletest_player_test_question_validate($form, &$form_state)
+
+/**
+ * submit function for the form
+ */
+function simpletest_player_test_question_submit($form, &$form_state) {
+  if($form_state['clicked_button']['#value'] == $form_state['values']['skip']) {
+    $state = 'skipped';
+  }
+  if($form_state['clicked_button']['#value'] == $form_state['values']['answer']) {
+    $state = $form_state['values']['answer_id'];
+  }
+  $uid = db_result(db_query("SELECT user_id
+                             FROM {simpletest_user_sessions}
+                             WHERE hash='%s'", $_COOKIE['simpletest_session']));
+  if(isset($state)) {
+    $count = db_result(db_query(
+                      "SELECT COUNT(*)
+                       FROM {simpletest_user_progress}
+                       WHERE user_id=%d
+                       AND question_id=%d", $uid, $form_state['values']['qid']));
+    if($count == 0) {
+      db_query("INSERT INTO {simpletest_user_progress} (user_id, question_id, answer_state, answer_time)
+                VALUES (%d, %d, '%s', '%s')",
+               $uid,
+               $form_state['values']['qid'],
+               $state,
+              time()
+              );
+    } else {
+      db_query("UPDATE {simpletest_user_progress}
+                SET answer_state='%s'
+                WHERE user_id=%d
+                AND question_id=%d",
+                $state, $uid, $form_state['values']['qid']);
+    }
+  }
+} // function simpletest_player_test_question_submit($form, &$form_state)
+
+/******************************
+ * EMD: (player) simpletest/% *
+ ******************************/
+/**********************************************
+ * BEGIN: (1) admin/settings/simpletest/tests *
+ *********************************************/
+/**
+ * Fuction displays table with all tests and a button for adding new test
+ */
+function simpletest_tests() {
+  $header = array(array('data' => t('Test name'), 'align' => 'left'),
+                  array('data' => t('Discipline'), 'align' => 'left'),
+                  array('data' => t('Academic year'), 'align' => 'left'),
+                  array('data' => t('Edit'), 'align' => 'left'),
+                  array('data' => t('Remove'), 'align' => 'left'),
+                  array('data' => t('Results'), 'align' => 'left'),
+              );
+  $rows = array();
+  $results = db_query("SELECT id, name, discipline, year FROM {simpletest_tests}");
+  while($test = db_fetch_object($results)) {
+    $rows[] = array(array('data' => t('<a href="!base_path/admin/settings/simpletest/tests/show/!tid">!tname</a>',
+                                      array('!base_path' => base_path(),
+                                            '!tid' => $test->id,
+                                            '!tname' => $test->name)),
+                          'align' => 'left'),
+                    array('data' => $test->discipline, 'align' => 'left'),
+                    array('data' => $test->year, 'align' => 'left'),
+                    array('data' => t('<a href="!base_path/admin/settings/simpletest/tests/edit/!tid">Edit</a>',
+                                      array('!base_path' => base_path(), '!tid' => $test->id,)),
+                          'align' => 'left',),
+                    array('data' => 
+                            t('<a href="!base_path/admin/settings/simpletest/tests/remove/!tid">Remove</a>',
+                              array('!base_path' => base_path(), '!tid' => $test->id,)),
+                          'align' => 'left'),
+                    array('data' => 
+                            t('<a href="!base_path/simpletest/results/!tid">Results</a>',
+                              array('!base_path' => base_path(), '!tid' => $test->id,)),
+                          'align' => 'left'),
+
+                );
+  }
+  $table = theme_table($header, $rows);
+  $add_button = t('<a href="!base_path/admin/settings/simpletest/tests/add/">Add test</a>',
+                  array('!base_path' => base_path()));
+  return $table . $add_button;
+} // function simpletest_tests()
+/**********************************************
+ * END: (1) admin/settings/simpletest/tests *
+ *********************************************/
+
+/**
+ * Function simpletest_tests_form_validate() is using to validate
+ * forms for adding and editing test. It's cut from each of this
+ * form and placed here just for not to writing it twice
+ */
+function simpletest_tests_form_validate($form, &$form_state) {
+  if($form_state['values']['name'] == '' ) {
+    form_set_error('name', t('The name of the test cannot be empty'));
+  }
+  if($form_state['values']['description'] == '' ) {
+    form_set_error('description', t('The description of the test cannot be empty'));
+  }
+  if($form_state['values']['discipline'] == '' ) {
+    form_set_error('discipline', t('The name of the discipline cannot be empty'));
+  }
+  if($form_state['values']['year'] == '' ) {
+    form_set_error('year', t('The year cannot be empty'));
+  }
+  if(! is_numeric($form_state['values']['year'])) {
+    form_set_error('year', t('Only numeric values are allowed'));
+  }
+} // function simpletest_tests_form_validate()
+
+/*******************************************************
+ * BEGIN: (1.1) admin/settings/simpletest/tests/edit/% *
+ *******************************************************/
+
+/**
+ * Function generates form for editing test
+ */
+function simpletest_tests_edit_form($form_state, $tid) {
+  // Getting current values or throw error
+  if(is_numeric($tid)) { // Test ID must be a number
+    try {
+      $results = db_query("SELECT name, descr, discipline, year FROM {simpletest_tests} WHERE id='%d'", $tid);
+      $test = db_fetch_object($results);
+    } catch (Exception $e) {
+      drupal_set_message($e->getMessage(), 'error');
+    }
+  } else {
+    drupal_set_message('Wrong URL. Test ID must be a numeric value', 'error');
+    drupal_goto('/admin/settings/simpletest/tests');
+  }
+  $form['name'] = array('#type' => 'textfield',
+                        '#title' => 'Name',
+                        '#maxlength' => 256,
+                        '#default_value' => $test->name,
+                  );
+  $form['description'] = array('#type' => 'textarea',
+                               '#title' => 'Description',
+                               '#default_value' => $test->descr,
+  );
+  $form['discipline'] = array('#type' => 'textfield',
+                              '#title' => 'Discipline',
+                              '#maxlength' => 256,
+                              '#default_value' => $test->discipline,
+                        );
+  $year = drupal_map_assoc(array(1, 2, 3, 4, 5, 6));
+  $form['year'] = array('#type' => 'select',
+                        '#title' => 'Academic year',
+                        '#options' => $year,
+                        '#default_value' => $test->year,
+                  );
+  // Setting test id in the hidden field to handle it with submit function
+  $form['tid'] = array('#type' => 'hidden',
+                       '#default_value' => $tid,
+                 );
+  $form['submit'] = array('#type' => 'submit',
+                          '#value' => t('Save'),
+                    );
+  return $form;
+} // function simpletest_tests_edit_form()
+
+/**
+ * Function validates input on form arter editing test
+ */
+function simpletest_tests_edit_form_validate($form, &$form_state) {
+  simpletest_tests_form_validate($form, &$form_state);
+} // function simpletest_tests_edit_form_validate()
+function simpletest_tests_edit_form_submit($form, &$form_state) {
+  try {
+    db_query("UPDATE {simpletest_tests} 
+              SET name='%s', descr='%s', discipline='%s', year='%s'
+              WHERE id=%d",
+              $form_state['values']['name'],
+              $form_state['values']['description'],
+              $form_state['values']['discipline'],
+              $form_state['values']['year'],
+              $form_state['values']['tid']);
+    $form_state['redirect'] = 'admin/settings/simpletest/tests';
+    drupal_set_message(t("The test has been successfully edited."));
+  } catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+  }
+} // function simpletest_tests_edit_form_submit($form, &$form_state)
+
+/*******************************************************
+ * END: (1.1) admin/settings/simpletest/tests/edit/% *
+ *******************************************************/
+
+/****************************************************
+ * BEGIN: (1.2) admin/settings/simpletest/tests/add *
+ ****************************************************/
+
+/**
+ * Function generates form for adding new test
+ */
+function simpletest_tests_add_form($form_state) {
+  $form['name'] = array('#type' => 'textfield',
+                        '#title' => 'Name',
+                        '#maxlength' => 256,
+                  );
+  $form['description'] = array('#type' => 'textarea',
+                               '#title' => 'Description',
+  );
+  $form['discipline'] = array('#type' => 'textfield',
+                              '#title' => 'Discipline',
+                              '#maxlength' => 256,
+                        );
+  $year = drupal_map_assoc(array('--', 1, 2, 3, 4, 5, 6));
+  $form['year'] = array('#type' => 'select',
+                        '#title' => 'Academic year',
+                        '#options' => $year,
+                  );
+  $form['submit'] = array('#type' => 'submit',
+                          '#value' => t('Add'),
+                    );
+  return $form;
+} // function simpletest_tests_add_form()
+
+/**
+ * Function validates input on form that adding new test
+ */
+function simpletest_tests_add_form_validate($form, &$form_state) {
+  // Add check if test with that name is already exists
+  simpletest_tests_form_validate($form, &$form_state);
+} // function simpletest_tests_add_form_validate()
+
+/**
+ * Action on form submit (after validation)
+ * Inserts new line in tests table and redirects to created test
+ */
+function simpletest_tests_add_form_submit($form, &$form_state) {
+  try {
+    db_query("INSERT INTO {simpletest_tests} (name, descr, discipline, year)
+              VALUES ('%s', '%s', '%s', '%d')",
+              $form_state['values']['name'],
+              $form_state['values']['description'],
+              $form_state['values']['discipline'],
+              $form_state['values']['year']);
+    // trying to get last inserted id and on success redirecting directly
+    // to new test, otherwise redirect to table with all tests
+    try {
+      $tid = db_last_insert_id('simpletest_tests', 'id');
+      $form_state['redirect'] = 'admin/settings/simpletest/tests/show/' . $tid;
+    } catch (Exception $e) {
+      drupal_set_message($e->getMessage(), 'error');
+      $form_state['redirect'] = '/admin/settings/simpletest/tests';
+    }
+    drupal_set_message(t('The test has been successfully added.'));
+  } catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+  }
+} // function simpletest_tests_add_form_submit($form, &$form_state)
+
+/**************************************************
+ * END: (1.2) admin/settings/simpletest/tests/add *
+ **************************************************/
+
+/*****************************************************
+ * BEGIN: (1.3) admin/setting/simpetest/tests/show/% *
+ *****************************************************/
+
+/**
+ * Function show table with all questions in tests and answers,
+ * displays links to adding and modifying pages
+ */
+function simpletest_tests_show($tid) {
+  // Fetch all questions for this test and count of such question
+  $questions = db_query("SELECT id, question 
+                         FROM {simpletest_questions} 
+                         WHERE test_id=%d", $tid);
+  $questions_number = db_result(db_query(
+                        "SELECT COUNT(*) 
+                         FROM {simpletest_questions} 
+                         WHERE test_id=%d", $tid));
+  $output = '';
+  if($questions_number > 0) {
+    while($question = db_fetch_object($questions)) { // iterate through questions
+      // Question in the header of the table
+      $links = t('<a href="!base_path/admin/settings/simpletest/questions/edit/!qid">Edit question</a>' .
+                 ' | ' .
+                 '<a href="!base_path/admin/settings/simpletest/questions/remove/!qid">Remove question</a>',
+                array('!base_path' => base_path(), '!qid' => $question->id));
+      $anchor = t(filter_output('<a name="q@qid"></a>', array('@qid' => $question->id,)));
+      $question_table_header = array(
+                                 array('data' => t('Correct')),
+                                 array('data' => t('Answer')),
+                                 array('data' => t('Edit')),
+                                 array('data' => t('Remove')),
+                               );
+      // Get all answers for this question and count of them
+      $answers = db_query("SELECT id, answer, correct
+                           FROM {simpletest_answers}
+                           WHERE question_id=%d", $question->id);
+      // Get answers number to decide if we need to show answers or show message that there is no answers
+      $answers_number = db_result(db_query(
+                          "SELECT COUNT(*)
+                           FROM {simpletest_answers}
+                           WHERE question_id=%d", $question->id));
+      $question_table_rows = array();
+      // Get number of correct answers for this question
+      $correct_number = db_result(db_query(
+                          "SELECT COUNT(*)
+                           FROM {simpletest_answers}
+                           WHERE question_id=%d
+                           AND correct=1", $question->id));
+      if($correct_number != 1) {
+        // If there is no correct answers or more then 1, show warning
+        $question_table_rows[] =
+          array(
+            array(
+              'data' => t('<span style="color: red">You MUST have exactly one correct answer</span>'),
+              'colspan' => 4,
+            ),
+          );
+      }
+      if($answers_number > 0) {
+        while($answer = db_fetch_object($answers)) { // iterate through answers
+          $question_table_rows[] = 
+            array(
+              // Column with 0 if answer is wrong and 1 in other case
+              array('data' => $answer->correct,
+                    'style' => 'whitespace-wrap: nowrap', // to expand answer and shring all other columns
+              ),
+              // Column with question text
+              array('data' => t('<a name="a!aid"></a>!answer',
+                                array(
+                                  '!aid'    => $answer->id, 
+                                  '!answer' => filter_output($answer->answer),
+                                 )
+                               ),
+                    'style' => 'width: 99%', // to expand answer and shring all other columns
+              ),
+              // Column with answer edit link
+              array(
+                'data' => t('<a href="!base_path/admin/settings/simpletest/answers/edit/!aid">Edit</a>',
+                            array(
+                                  '!base_path' => base_path(),
+                                  '!aid'  => $answer->id,
+                                )
+                            ),
+                'style' => 'whitespace-wrap: nowrap', // to expand answer and shring all other columns
+              ),
+              // Column with answer remove link
+              array(
+                'data' => t('<a href="!base_path/admin/settings/simpletest/answers/remove/!aid">Remove</a>',
+                            array(
+                              '!base_path' => base_path(),
+                              '!aid'  => $answer->id,
+                              )
+                          ),
+                'style' => 'whitespace-wrap: nowrap', // to expand answer and shrink all other columns
+              ),
+            );
+        }
+      } else {
+        $question_table_rows[] = array(
+                                     array(
+                                       'data' => t('There is no answers for this question yet'),
+                                       'colspan' => 4,
+                                     ),
+                                 );
+      }
+      // Last row in table - row with link to adding new test form
+      $question_table_rows[] =
+        array(
+          array(
+            'data' => t('<a href="!base_path/admin/settings/simpletest/answers/add/!qid">Add answer</a>',
+                         array('!base_path' => base_path(), '!qid' => $question->id)),
+            'colspan' => 4,
+          ),
+        );
+     $question_table = theme_table($question_table_header, $question_table_rows);
+     $question_fieldset = theme('fieldset', array(
+                           '#title' => filter_output($question->question),
+                           '#children' => $anchor . $links . $question_table,
+                           '#collapsible' => false,
+                           '#collapsed' => false,
+                           '#attribultes' => array('class' => array('collapsible', 'collapsed')),
+                        ));
+     $output .= $question_fieldset;
+    }
+  } else {
+    drupal_set_message("There is no questions in this test. Please add something", 'warning');
+  }
+  $output .= '<a href="' . base_path() . 'admin/settings/simpletest/questions/add/' . $tid . '">Add question</a>';
+  return $output;
+} // function simpletest_tests_show($tid)
+
+/*********************************************************
+ * BEGIN: (1.4) admin/settings/simpletest/tests/remove/% *
+ ********************************************************/
+
+/**
+ * Function generates form for removing test
+ */
+function simpletest_tests_remove_form($form_state, $tid) {
+  if(! is_numeric($tid)) {
+    drupal_set_message('Wrong URL. Test ID must be a numeric value', 'error');
+    drupal_goto('admin/settings/simpletest/tests');
+  } 
+  // Setting a hidden field with test id to handle it later with submit function
+  $form['tid'] = array('#type' => 'hidden',
+                       '#default_value' => $tid,
+                 );
+  $form['submit'] = array('#type' => 'submit',
+                          '#value' => t('Remove'),
+                    );
+  return $form;
+} // function simpletest_tests_remove_form()
+
+/**
+ * Function validates input on form that adding new test
+ */
+function simpletest_test_remove_form_validate($form, &$form_state) {
+  // Nothing to validate
+} // function simpletest_tests_remove_form_validate()
+
+function simpletest_tests_remove_form_submit($form, &$form_state) {
+  try {
+    db_query("DELETE FROM {simpletest_tests} WHERE id=" . $form_state['values']['tid']);
+    $form_state['redirect'] = 'admin/settings/simpletest/tests';
+    drupal_set_message(t("The test has been successfully removed."));
+  } catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+  }
+} // function simpletest_tests_remove_form_submit($form, &$form_state)
+
+/*******************************************************
+ * END: (1.4) admin/settings/simpletest/tests/remove/% *
+ *******************************************************/
+/***********************************************************
+ * BEGIN: (2.1) admin/settings/simpletest/questions/edit/% *
+ ***********************************************************/
+
+/**
+ * Form for editing question
+ */
+function simpletest_questions_edit_form($form_state, $qid) {
+  // Getting current value of question
+  if(is_numeric($qid)) { // Question id must be a number
+    try {
+      $results = db_query("SELECT question,test_id FROM {simpletest_questions} WHERE id=%d", $qid);
+      $question = db_fetch_object($results);
+    } catch (Exception $e) {
+      drupal_set_message($e->getMessage(), 'error');
+    }
+  } else {
+    drupal_set_message('Wrong URL. Question ID must be a numeric value', 'error');
+    drupal_goto('/admin/settings/simpletest/tests');
+  }
+  $form['question'] = array(
+                         '#type' => 'textarea',
+                         '#title' => 'Question',
+                         '#default_value' => $question->question,
+                      );
+  $form['tid'] = array(
+                   '#type' => 'hidden',
+                   '#default_value' => $question->test_id,
+                 );
+  $form['qid'] = array(
+                   '#type' => 'hidden',
+                   '#default_value' => $qid,
+                 );
+  $form['submit'] = array('#type' => 'submit',
+                          '#value' => t('Save'),
+                    );
+  return $form;
+} // function simpletset_questions_edit_form($form_state, $qid)
+
+/**
+ * Function for validating input on question editing form
+ */
+function simpletest_questions_edit_form_validate($form, &$form_state) {
+  if($form_state['values']['question'] == '') {
+    form_set_error('question', t('The question cannot be empty'));
+  }
+} // function simpletest_questions_edit_form_validate($form_state, $qid)
+function simpletest_questions_edit_form_submit($form, &$form_state) {
+  try {
+    db_query("UPDATE {simpletest_questions}
+              SET question='%s'
+              WHERE id=%d", $form_state['values']['question'], $form_state['values']['qid']);
+    $form_state['redirect'] = 'admin/settings/simpletest/tests/show/' .
+                              $form_state['values']['tid'] .
+                              '#q' . $form_state['values']['qid'];
+    drupal_set_message(t("The question has been successfully edited"));
+  } catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+  }
+} // function simpletest_questions_edit_form_submit($form_state, $qid)
+/*********************************************************
+ * END: (2.1) admin/settings/simpletest/questions/edit/% *
+ *********************************************************/
+/**********************************************************
+ * BEGIN: (2.2) admin/settings/simpletest/questions/add/% *
+ **********************************************************/
+
+/*
+ * Function describe form for adding new question to test with $tid
+ */
+function simpletest_questions_add_form($form_state, $tid) {
+  $form['question'] = array(
+                        '#type' => 'textarea',
+                        '#title' => 'Question',
+                      );
+  $form['tid'] = array(
+                  '#type' => 'hidden',
+                  '#default_value' => $tid,
+                 );
+  // Hidden field with $tid used for submit form
+  $form['submit'] = array('#type' => 'submit',
+                          '#value' => t('Add'),
+                    );
+  return $form;
+} // function simpletest_questions_add_form($tid)
+
+/**
+ * Validate the form for adding question
+ */
+function simpletest_questions_add_form_validate($form, &$form_state) {
+  // TODO: add check if such answer already exists
+  if($form_state['values']['question'] == '') {
+    form_set_error('question', t('The question cannot be empty'));
+  }
+  $tests_number = db_result(db_query(
+                  'SELECT COUNT(*)
+                   FROM {simpletest_tests}
+                   WHERE id=' . $form_state['values']['tid']));
+  if($tests_number != 1) {
+    form_set_error('question', t('Test id is wrong, or test has been removed'));
+  }
+} // function simpletest_questions_add_form_validate($form, &$form_state)
+/**
+ * Submit the form for adding question
+ */
+function simpletest_questions_add_form_submit($form, &$form_state) {
+  try {
+    db_query("INSERT INTO {simpletest_questions} (test_id, question)
+              VALUES (%d, '%s')",
+             $form_state['values']['tid'],
+             $form_state['values']['question']);
+    // trying to get last inserted id and redirect to created question
+    try {
+      $qid = db_last_insert_id('simpletest_questions', 'id');
+      $form_state['redirect'] = 'admin/settings/simpletest/tests/show/' . $form_state['values']['tid'];
+    } catch (Exception $e) {
+      drupal_set_message($e->getMessage(), 'error');
+      $form_state['redirect'] = '/admin/settings/simpletest/tests/' . $form_state['values']['tid'];
+    }
+    drupal_set_message(t('The question has been successfylly added'));
+  } catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+  }
+} // function simpletest_questions_add_form_submit($form, &$form_state)
+/********************************************************
+ * END: (2.2) admin/settings/simpletest/questions/add/% *
+ ********************************************************/
+
+/************************************************************
+ * BEGIN: (2.4) admin/settings/simpletest/questions/remove/% *
+ ************************************************************/
+
+/**
+ * Function creating form with submit button for confirmation question deletion
+ */
+function simpletest_questions_remove_form($form_state, $qid) {
+  $form['qid'] = array('#type' => 'hidden',
+                      '#default_value' => $qid,
+                );
+  $form['submit'] = array('#type' => 'submit',
+                          '#value' => t('Remove'),
+                    );
+  return $form;
+} // function simpltest_questions_remove_form($form_state, $qid)
+
+/**
+ * Function validated remove question form
+ */
+function simpletest_questions_remove_form_validate($form, &$form_state) {
+  // TODO: Add somthing here
+}
+/**
+ * Function removes question after clicking on submit button and validating
+ */
+function simpletest_questions_remove_form_submit($form, &$form_state) {
+  try {
+    $results = db_query("SELECT test_id FROM {simpletest_questions} WHERE id=%d", $form_state['values']['qid']);
+    $question = db_fetch_object($results);
+    db_query("DELETE FROM {simpletest_questions} WHERE id=" . $form_state['values']['qid']);
+    $form_state['redirect'] = 'admin/settings/simpletest/tests/show/' . $question->test_id;
+    drupal_set_message(t("The question has been successfully removed."));
+  } catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+  }
+}
+/**********************************************************
+ * END: (2.4) admin/settings/simpletest/questions/remove/% *
+ **********************************************************/
+
+/*********************************************************
+ * BEGIN: (3.1) admin/settings/simpletest/answers/edit/% *
+ *********************************************************/
+
+/**
+ * Function describes form for editing answer
+ */
+function simpletest_answers_edit_form($form_state, $aid) {
+  try {
+    $result = db_query("SELECT answer, correct, question_id
+                        FROM {simpletest_answers}
+                        WHERE id=%d", $aid);
+    $answer = db_fetch_object($result);
+    $result = db_query("SELECT test_id
+                        FROM {simpletest_questions}
+                        WHERE id=%d", $answer->question_id);
+    $question = db_fetch_object($result);
+  } catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+    drupal_goto('admin/settings/simpletest/tests');
+  }
+  $form['answer'] = array(
+                      '#type' => 'textarea',
+                      '#title' => 'Answer',
+                      '#default_value' => $answer->answer,
+                    );
+  $form['correct'] = array(
+                       '#type' => 'checkbox',
+                       '#title' => 'Correct',
+                       '#default_value' => $answer->correct,
+                     );
+  $form['aid'] = array(
+                   '#type' => 'hidden',
+                   '#default_value' => $aid,
+                 );
+  $form['qid'] = array(
+                   '#type' => 'hidden',
+                   '#default_value' => $answer->question_id,
+                 );
+  $form['tid'] = array(
+                   '#type' => 'hidden',
+                   '#default_value' => $question->test_id,
+                 );
+  $form['submit'] = array(
+                      '#type' => 'submit',
+                      '#value' => 'Save',
+                    );
+  return $form;
+} // function simpletest_answers_edit_form($form_state, $aid)
+
+/**
+ * Function validates input for answer editing form
+ */
+function simpletest_answers_edit_form_validate($form, &$form_state) {
+  if(! is_numeric($form_state['values']['aid'])) {
+    form_set_error('answer', t('Incorrect answer id'));
+  }
+  if($form_state['values']['answer'] == '') {
+    form_set_error('answer', t('The answer cannot be empty'));
+  }
+} // function simpletest_answers_edit_form_validate($form, &$form_state)
+
+/**
+ * Function submits information from answer editing form
+ */
+function simpletest_answers_edit_form_submit($form, &$form_state) {
+  try {
+    db_query("UPDATE {simpletest_answers}
+              SET answer='%s', correct=%d
+              WHERE id=%d",
+             $form_state['values']['answer'],
+             $form_state['values']['correct'],
+             $form_state['values']['aid']);
+    $form_state['redirect'] = array(
+                                'admin/settings/simpletest/tests/show/' .
+                                $form_state['values']['tid'],
+                                NULL,
+                                'q' . $form_state['values']['qid'], //anchor
+                              );
+  } catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+  }
+}
+/*******************************************************
+ * END: (3.1) admin/settings/simpletest/answers/edit/% *
+ *******************************************************/
+/*******************************************************
+ * BEGIN: (3.2) admin/settings/simpletest/answers/add/% *
+ *******************************************************/
+/**
+ * Function describes the form for adding new answer for the question
+ */
+function simpletest_answers_add_form($form_state, $qid) {
+  $form['answer'] = array(
+                      '#type' => 'textarea',
+                      '#title' => 'Answer',
+                    );
+  $form['correct'] = array(
+                       '#type' => 'checkbox',
+                       '#title' => 'Correct',
+                     );
+  $form['qid'] = array(
+                  '#type' => 'hidden',
+                  '#default_value' => $qid,
+                 );
+  $form['submit'] = array('#type' => 'submit',
+                          '#value' => t('Add'),
+                    );
+  return $form;
+} // function simpletest_answers_add_form($form_state, $qid) 
+
+/**
+ * Function validates input for answer form
+ */
+function simpletest_answers_add_form_validate($form, &$form_state) {
+  // TODO: Add check if such answer already exists
+  if($form_state['values']['answer'] == '') {
+    form_set_error('answer', t('The answer cannot be empty'));
+  }
+} // function simpletest_answers_add_from_validate($form, &$form_state)
+
+/**
+ * Function submits the form for adding new answer
+ */
+function simpletest_answers_add_form_submit($form, &$form_state) {
+  try {
+    db_query("INSERT INTO {simpletest_answers} (answer, correct, question_id)
+              VALUES ('%s', '%s', %d)",
+             $form_state['values']['answer'],
+             $form_state['values']['correct'],
+             $form_state['values']['qid']);
+    $results = db_query("SELECT test_id FROM {simpletest_questions} WHERE id=%d", $form_state['values']['qid']);
+    $question = db_fetch_object($results);
+    $form_state['redirect'] = array(
+                                'admin/settings/simpletest/tests/show/' . $question->test_id,
+                                NULL,
+                                'q' . $form_state['values']['qid'],
+                              );
+  } catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+  }
+}
+/******************************************************
+ * END: (3.2) admin/settings/simpletest/answers/add/% *
+ ******************************************************/
+
+/*****************************************************
+ * BEGIN: (3.4) admin/settings/simpletest/answers/remove/% *
+ *****************************************************/
+/**
+ * Function creates form with submit button for removing answer
+ */
+function simpletest_answers_remove_form($form_state, $aid) {
+  if(! is_numeric($aid)) {
+    drupal_set_message('Wrong URL. Answer ID must be a numeric value', 'error');
+    drupal_goto('admin/settings/simpletest/tests');
+  }
+  // Setting a hidden field with test id to handle it later with submit function
+  $form['aid'] = array('#type' => 'hidden',
+                       '#default_value' => $aid,
+                 );
+  $form['submit'] = array('#type' => 'submit',
+                          '#value' => t('Remove'),
+                    );
+  return $form;
+} // function simpletest_answers_remove_form($form_state, $aid)
+
+/**
+ * Function for validating input on answer remove form
+ */
+function simpletest_answers_remove_form_validate($form, &$form_state) {
+ // Nothing to validate
+} // function simpletest_answers_remove_form_validate($form, &$form_state)
+
+/**
+ * Function removes answer on clicking submit button
+ */
+function simpletest_answers_remove_form_submit($form, &$form_state) {
+  try {
+    $result = db_query("SELECT answer, correct, question_id
+                        FROM {simpletest_answers}
+                        WHERE id=%d", $form_state['values']['aid']);
+    $answer = db_fetch_object($result);
+    $result = db_query("SELECT test_id
+                        FROM {simpletest_questions}
+                        WHERE id=%d", $answer->question_id);
+    $question = db_fetch_object($result);
+    db_query("DELETE FROM {simpletest_answers} WHERE id=" . $form_state['values']['aid']);
+    $form_state['redirect'] = array(
+                                'admin/settings/simpletest/tests/show/' . $question->test_id,
+                                NULL,
+                                'q' . $answer->question_id,
+                              );
+    drupal_set_message(t("The test has been successfully removed."));
+  } catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+  }
+} // function simpletest_answers_remove_form_submit($form, &$form_state)
+/*********************************************************
+ * END: (3.4) admin/settings/simpletest/answers/remove/% *
+ *********************************************************/
+/****************************************************
+ * BEGIN: (4.2) admin/settings/simpletest/results/% *
+ ****************************************************/
+function simpletest_results_test($tid) {
+  $questions_ptr = db_query("SELECT id FROM {simpletest_questions} WHERE test_id=%d", $tid);
+  // BEGIN FIXME: Creating array of questions to use it many times.
+  // I'm sure, that there is a better way to do this
+  while($questions[] = db_fetch_object($questions_ptr)) {
+    // Do nothing. Just for populating $questions array
+  }
+  unset($questions[count($questions)-1]);
+  // END FIXME
+  // Create header for table with results
+  $table_header[] = array('data' => t('Group'));
+  $table_header[] = array('data' => t('First Name'));
+  $table_header[] = array('data' => t('Last name'));
+  // Create column for every question
+  $i = 1;
+  foreach($questions as $question) {
+    $table_header[] = array('data' => t('Question !i', array('!i' => $i)));
+    $i++;
+  }
+  $table_header[] = array('data' => t('Completed?'));
+  $table_header[] = array('data' => t('Score'));
+  // Get all users and iterate over them
+  $users = db_query("SELECT id, name, last_name, grp FROM {simpletest_users}");
+  while($user = db_fetch_object($users)) {
+    // Get count of answers users passed on this test
+    $count = db_result(db_query("SELECT COUNT(*)
+                                 FROM {simpletest_user_progress}
+                                 JOIN {simpletest_questions}
+                                 ON {simpletest_user_progress}.question_id = {simpletest_questions}.id
+                                 AND {simpletest_questions}.test_id=%d
+                                 AND user_id=%d", $tid, $user->id));
+    // If count more than 1 - adding new row to table
+    if($count) {
+      // Flushing array after previous iteration
+      $table_fields = array();
+      // Filling table fields with info about current user
+      $table_fields[] = array('data' => $user->grp);
+      $table_fields[] = array('data' => $user->name);
+      $table_fields[] = array('data' => $user->last_name);
+      // Vars to count correct and wrong answers
+      $ans_correct = 0;
+      $ans_wrong = 0;
+      //
+      foreach($questions as $question) {
+        $answer = db_result(db_query("SELECT answer_state
+                                      FROM {simpletest_user_progress}
+                                      WHERE user_id = %d
+                                      AND question_id = %d", $user->id, $question->id));
+        if(is_numeric($answer)) {
+          $correct = db_result(db_query("SELECT COUNT(*)
+                                         FROM {simpletest_answers}
+                                         WHERE id = %d
+                                         AND correct = 1", $answer));
+          if($correct) {
+            $answer_state = 1; // correct answer
+            $ans_correct++;
+          } else {
+            $answer_state = 0; // wrong answer
+            $ans_wrong++;
+          }
+        } else {
+          $answer_state = 2; // skipped answer
+        }
+        switch($answer_state) {
+          case 0:
+            $table_fields[] = array('data' => '-');
+            break;
+          case 1:
+            $table_fields[] = array('data' => '+');
+            break;
+          case 2:
+            $table_fields[] = array('data' => '');
+            break;
+        }
+      }
+      // Add field, indicating completed test or not
+      if(count($questions) == ($ans_correct + $ans_wrong)) {
+        $table_fields[] = array('data' => t('Completed'));
+      } else {
+        $table_fields[] = array('data' => t('In progress'));
+      }
+      $table_fields[] = array('data' => t('!correct/!all',
+                                          array('!correct' => $ans_correct,
+                                                '!all' => count($questions))));
+      // Add new row
+      $table_rows[] = $table_fields;
+    }
+  }
+  $out .= theme_table($table_header, $table_rows);
+  return $out;
+}
+/**************************************************
+ * END: (4.2) admin/settings/simpletest/results/% *
+ **************************************************/
+/**
+ * Settings in site configuration for this module
+ */
+function simpletest_admin_form() {
+    $form['simpletest_replacements'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Replacements'),
+      '#default_value' => variable_get('simpletest_replacements', ''),
+      '#description' => t('If you want to replace text "<strong>[tex]</strong>" with 
+                          "<strong>&lt;img src=/cgi-bin/tex.cgi?</strong>"
+                          and "<strong>[/tex]</strong>" with "<strong> /&gt;</strong>"<br />
+                          just write it in JSON format like
+                          <code><br />
+                          {<br />
+                          &nbsp;&nbsp;"[tex]":"&lt;img src=/cgi-bin/tex.cgi?",<br />
+                          &nbsp;&nbsp;"[/tex]":" /&lt;"<br />
+                          }</code><br />'),
+    );
+    return system_settings_form($form);
+} // function simpletest_admin_form()
+function simpletest_admin_form_validate($form, &$form_state) {
+  // TODO: Add something here
+}
+function simpletest_admin_form_submit($form, &$form_state) {
+  variable_set('simpletest_replacements', $form_state['variables']['simpletest_replacements']);
+}
+function simpletest_view_conf() {
+    $output = '';
+    $output .= 'Replacements: ' . 
+    variable_get('simpletest_replacements', '') . '<br />';
+    return $output;
+}
+
+/**
+ * Implementation of hook_node_info().
+ */
+function simpletest_node_info() {
+  return array(
+    'simpletest' => array(
+      'name' => t('Simple Test'),
+      'module' => 'simpletest',
+      'description' => "This is a node containing test created by simpletest module.",
+    )
+  );
+} // function simpletest_node_info()
+
+/**
+ * Implementation of hook_access().
+ */
+function simpletest_access($op, $node, $account) {
+  if ($op == 'create') {
+    // Only users with permission to do so may create this node type.
+    return user_access('create simpletest', $account);
+  }
+  // Users who create a node may edit or delete it later, assuming they have the
+  // necessary permissions.
+  if ($op == 'update' || $op == 'delete') {
+    if (user_access('edit own simpletest', $account) && ($account->uid == $node->uid)) {
+      return TRUE;
+    }
+  }
+} // function simpletest_access()
+
+function simpletest_form(&$node, $form_state) {
+  $type = node_get_types('type', $node);
+
+  // We need to define form elements for the node's title and body.
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain($type->title_label),
+    '#required' => TRUE,
+    '#default_value' => $node->title,
+    '#weight' => -5
+  );
+  // We want the body and filter elements to be adjacent. We could try doing
+  // this by setting their weights, but another module might add elements to the
+  // form with the same weights and end up between ours. By putting them into a
+  // sub-array together, we're able force them to be rendered together.
+  $form['body_filter']['body'] = array(
+    '#type' => 'textarea',
+    '#title' => check_plain($type->body_label),
+    '#default_value' => $node->body,
+    '#required' => FALSE
+  );
+  $form['body_filter']['filter'] = filter_form($node->format);
+
+  // NOTE in simpletest there is some addition code here not needed for this simple node-type
+
+  return $form;
+}

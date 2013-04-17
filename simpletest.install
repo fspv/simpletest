@@ -1,0 +1,385 @@
+<?php
+/* vim: set filetype=php expandtab tabstop=2 shiftwidth=2: */
+/**
+ * Install the simpletest module, including it's content (node)
+ * type.
+ * @file
+ */
+
+/**
+ * Implementation of hook_install()
+ */
+function simpletest_install() {
+  drupal_install_schema('simpletest');
+  variable_set('simpletest_replacements', '');
+  db_query("DELETE FROM {cache}");
+}
+
+/**
+ * Implementation of hook_uninstall()
+ */
+function simpletest_uninstall() {
+  variable_del('simpletest_replacements');
+  drupal_uninstall_schema('simpletest');
+}
+
+/**
+ * Implementation of hook_schema()
+ * @return array of Schema API table definitions.
+ */
+function simpletest_schema() {
+
+  /**
+   * simpletest_tests table contains common info about test
+   */
+  $schema['simpletest_tests'] = array(
+    'fields' => array(
+      'id' => array(
+        'description' => 'Test ID',
+        'type'        => 'serial',
+        'size'        => 'big',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'name' => array(
+        'type'        => 'text',
+        'size'        => 'small',
+        'not null'    => TRUE,
+        'default'     => 'Test name (Please change it)',
+        'description' => 'Short test name',
+      ),
+      'descr' => array(
+        'description' => 'Description of the test and what results are expected',
+        'type'        => 'text',
+        'size'        => 'medium',
+        'not null'    => TRUE,
+        'default'     => 'Test description (Please change it)',
+      ),
+      'discipline' => array(
+        'description' => 'The testing discipline. It is not necessary value. ' .
+                         'If this value is not present, student must see the ' .
+                         'test in "Other" section or so.',
+        'type'        => 'text',
+        'size'        => 'small',
+        'not null'    => FALSE,
+      ),
+      'year' => array(
+        'description' => 'Academic year (from 1 to 6 for students). It is not ' .
+                         'necessary value, it only helps to assign tests to ' .
+                         'student of only this year. Otherwise student must ' .
+                         'see test in "Other" section or so.',
+        'type'        => 'int',
+        'size'        => 'small',
+        'not null'    => 'true',
+        'not null'    => FALSE,
+      ),
+    ),
+    'primary key' => array('id')
+  );
+
+  /**
+   * simpletest_questions contains questions, and each question linked to
+   * test by test_id field. There is no functionality to create relationships
+   * and we link tables in this ugly way
+   */
+  $schema['simpletest_questions'] = array(
+    'fields' => array(
+      'id' => array(
+        'description' => 'Question ID',
+        'type'        => 'serial',
+        'size'        => 'big',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'test_id' => array(
+        'description' => 'ID of the test the question is attached',
+        'type'        => 'int',
+        'size'        => 'big',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'question' => array(
+        'description' => 'Question in clear html with tags for output formatting',
+        'type'        => 'text',
+        'size'        => 'medium',
+        'not null'    => TRUE,
+      ),
+      'type'  => array(
+        'description' => 'Question with only 1 right answer, or multiple? ' .
+                         'Can take values "single" or "multiple"',
+        'type'        => 'text',
+        'size'        => 'small',
+        'not null'    => TRUE,
+        'default'     => 'single',
+      ),
+    ),
+    'indexes' => array(
+      'id_testid'   => array('id', 'test_id')
+    ),
+    'primary key' => array('id')
+  );
+
+  /**
+   * simpletest_answers contains answers for questions, and each answer linked to
+   * question by question_id field. There is no functionality to create relationships
+   * and we link tables in this ugly way.
+   * It is necessary to check, that question with single answer doesn't have more
+   * the one correct answer.
+   */
+  $schema['simpletest_answers'] = array(
+    'fields' => array(
+      'id' => array(
+        'description' => 'Answer ID',
+        'type'        => 'serial',
+        'size'        => 'big',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'question_id' => array(
+        'description' => 'ID of the question the answer is attached',
+        'type'        => 'int',
+        'size'        => 'big',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'answer' => array(
+        'description' => 'Answer in clear html with tags for output formatting',
+        'type'        => 'text',
+        'size'        => 'medium',
+        'not null'    => TRUE,
+      ),
+      'correct'  => array(
+        'description' => 'Is answer correct? ' .
+                         'Can be 1 (if correct) or 0 (if wrong)',
+        'type'        => 'int',
+        'size'        => 'tiny',
+        'not null'    => TRUE,
+      ),
+    ),
+    'indexes' => array(
+      'id_testid'   => array('id', 'question_id')
+    ),
+    'primary key' => array('id')
+  );
+  
+  /**
+   * simpletest_users contains users, that can access test. Drupal users is not
+   * suitable for testing purposes because for testing students we need their
+   * names, last names, middles names, group number and academic year
+   */
+  $schema['simpletest_users'] = array(
+    'fields' => array(
+      'id' => array(
+        'description' => 'User ID',
+        'type'        => 'serial',
+        'size'        => 'big',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'name' => array(
+        'description' => 'Name',
+        'type'        => 'text',
+        'size'        => 'small',
+        'not null'    => TRUE,
+      ),
+      'last_name' => array(
+        'description' => 'Last name',
+        'type'        => 'text',
+        'size'        => 'small',
+        'not null'    => TRUE,
+      ),
+      'middle_name' => array(
+        'description' => 'Middle name',
+        'type'        => 'text',
+        'size'        => 'small',
+        'not null'    => FALSE,
+      ),
+      'year' => array(
+        'description' => 'Academic year (from 1 to 6 for students). It is not ' .
+                         'necessary value, it only helps to assign student ' .
+                         'tests of only this year. Otherwise student must ' .
+                         'see all tests.',
+        'type'        => 'int',
+        'size'        => 'small',
+        'not null'    => 'FALSE',
+      ),
+      'grp' => array(
+        'description' => 'Academic group (called "grp" because the word "group" is)' .
+                         ' special for sql',
+        'type'        => 'text',
+        'size'        => 'small',
+        'not null'    => FALSE,
+      ),
+    ),
+    'indexes' => array(),
+    'primary_key' => array('id')
+  ); 
+  
+  /**
+   * simpletest_user_progress contains state of answers
+   * The possible states are:
+   * - skipped (user can skip the question one time) 
+   * - correct (user answered the question correctly)
+   * - wrong (user answered the question wrong)
+   * Also contains answer time for debugging
+   */
+   $schema['simpletest_user_progress'] = array(
+    'fields' => array(
+      'id' => array(
+        'description' => 'ID',
+        'type'        => 'serial',
+        'size'        => 'big',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'user_id' => array(
+        'description' => 'ID of user that answer/skipped the question',
+        'type'        => 'int',
+        'size'        => 'big',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'question_id' => array(
+        'description' => 'ID of question user answered/skipped',
+        'type'        => 'int',
+        'size'        => 'big',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'answer_state' => array(
+        'description' => 'State of the answer (correct/wrong/skipped)',
+        'type'        => 'text',
+        'size'        => 'small',
+        'not null'    => TRUE,
+      ),
+      'answer_time' => array(
+        'description' => 'Time of the answer (for debugging)',
+        'type'        => 'text',
+        'size'        => 'small',
+        'not null'    => TRUE,
+      ),
+    ),
+    'indexes' => array(
+      'user' => array('user_id'),
+      'user_question' => array('user_id', 'question_id'),
+      'user_state' => array('user_id', 'answer_state'),
+      'user_question_state' => array('user_id', 'question_id', 'answer_state'),
+    ),
+    'primary_key' => array('id')
+  );
+  /**
+   * Tables with summary results. Raws of this table generates dynamically
+   * during the test (increasing wrong/correct counters) and on test finish
+   * script must write finish time
+   */
+  $schema['simpletest_user_results'] = array(
+    'fields' => array(
+      'id' => array(
+        'description' => 'Result ID',
+        'type'        => 'serial',
+        'size'        => 'big',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'user_id' => array(
+        'description' => 'ID of user completed the test',
+        'type'        => 'int',
+        'size'        => 'big',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'test_id' => array(
+        'description' => 'ID of the test completed by the user',
+        'type'        => 'int',
+        'size'        => 'big',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'correct_count' => array(
+        'description' => 'Number of correct answers',
+        'type'        => 'int',
+        'size'        => 'medium',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'wrong_count' => array(
+        'description' => 'Number of wrong answers',
+        'type'        => 'int',
+        'size'        => 'medium',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'finished' => array(
+        'description' => 'Is test finished? (0 - not finished, 1 - finished)',
+        'type'        => 'int',
+        'size'        => 'tiny',
+        'unsigned'    => TRUE,
+        'not_null'    => TRUE,
+      ),
+      'finish_time' => array(
+        'description' => 'When test was finished (must be used to remove old ' .
+                         'progress stats from user_progress table). Period must be' .
+                         'setted in options table',
+        'type'        => 'text',
+        'size'        => 'small',
+        'not null'    => TRUE,
+      )
+    ),
+    'indexes' => array(
+      'user' => array('user_id'),
+      'user_test' => array('user_id', 'test_id'),
+    ),
+    'primary_key' => array('id'),
+  );
+  /**
+   * Table for keeping user sessions
+   */
+  $schema['simpletest_user_sessions'] = array(
+    'fields' => array(
+      'id' => array(
+        'description' => 'Session ID',
+        'type'        => 'serial',
+        'size'        => 'big',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'user_id' => array(
+        'description' => 'ID of user started session',
+        'type'        => 'int',
+        'size'        => 'big',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'user_ip' => array(
+        'description' => 'IP of user started session',
+        'type'        => 'text',
+        'size'        => 'small',
+        'not null'    => TRUE,
+      ),
+      'user_agent' => array(
+        'description' => 'Useragent of user started session',
+        'type'        => 'text',
+        'size'        => 'small',
+        'not null'    => TRUE,
+      ),
+      'login_time' => array(
+        'description' => 'Time the user logged in',
+        'type'        => 'text',
+        'size'        => 'small',
+        'not null'    => TRUE,
+      ),
+      'hash' => array(
+        'description' => 'Hash to check user auth',
+        'type'        => 'text',
+        'size'        => 'small',
+        'not null'    => TRUE,
+      ),
+    ),
+    'indexes' => array(
+      'user_hash' => array('user_id', 'hash'),
+    ),
+    'primary_key' => array('id'),
+  );
+  return $schema;
+}
+
