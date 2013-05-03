@@ -45,7 +45,6 @@ function simpletest_schema() {
         'type'        => 'text',
         'size'        => 'small',
         'not null'    => TRUE,
-        'default'     => 'Test name (Please change it)',
         'description' => 'Short test name',
       ),
       'descr' => array(
@@ -53,7 +52,6 @@ function simpletest_schema() {
         'type'        => 'text',
         'size'        => 'medium',
         'not null'    => TRUE,
-        'default'     => 'Test description (Please change it)',
       ),
       'discipline' => array(
         'description' => 'The testing discipline. It is not necessary value. ' .
@@ -110,7 +108,6 @@ function simpletest_schema() {
         'type'        => 'text',
         'size'        => 'small',
         'not null'    => TRUE,
-        'default'     => 'single',
       ),
     ),
     'indexes' => array(
@@ -211,8 +208,7 @@ function simpletest_schema() {
         'not null'    => FALSE,
       ),
     ),
-    'indexes' => array(),
-    'primary_key' => array('id')
+    'primary key' => array('id',),
   ); 
   
   /**
@@ -262,10 +258,8 @@ function simpletest_schema() {
     'indexes' => array(
       'user' => array('user_id'),
       'user_question' => array('user_id', 'question_id'),
-      'user_state' => array('user_id', 'answer_state'),
-      'user_question_state' => array('user_id', 'question_id', 'answer_state'),
     ),
-    'primary_key' => array('id')
+    'primary key' => array('id')
   );
   /**
    * Tables with summary results. Raws of this table generates dynamically
@@ -329,7 +323,7 @@ function simpletest_schema() {
       'user' => array('user_id'),
       'user_test' => array('user_id', 'test_id'),
     ),
-    'primary_key' => array('id'),
+    'primary key' => array('id'),
   );
   /**
    * Table for keeping user sessions
@@ -375,10 +369,7 @@ function simpletest_schema() {
         'not null'    => TRUE,
       ),
     ),
-    'indexes' => array(
-      'user_hash' => array('user_id', 'hash'),
-    ),
-    'primary_key' => array('id'),
+    'primary key' => array('id'),
   );
   return $schema;
 }
