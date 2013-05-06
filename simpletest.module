@@ -35,9 +35,11 @@ function filter_output($input) {
   drupal_add_js(drupal_get_path('module', 'simpletest') . '/mimetex-vertical-align.js');
   // Get JSON with replacements from settings
   $json = variable_get('simpletest_replacements', '');
-  $repls = json_decode($json);
-  foreach($repls as $from => $to) {
-    $input = str_replace($from, $to, $input);
+  if(json_last_error() == JSON_ERROR_NONE && $json != '') {
+    $repls = json_decode($json);
+    foreach($repls as $from => $to) {
+      $input = str_replace($from, $to, $input);
+    }
   }
   return $input;
 } // function filter_output($input)
@@ -56,7 +58,7 @@ function simpletest_menu() {
    * Page with test, authorization etc.
    */
   $items['simpletest/%'] = array(
-    'title' => t('SimleTest'),
+    'title' => t('SimpleTest'),
     'description' => t('SimpleTest'),
     'page callback' => 'simpletest_player',
     'page arguments' => array(1),
@@ -144,8 +146,8 @@ function simpletest_menu() {
    * 2.4. Page with button for removing question
    */
   $items['admin/settings/simpletest/questions/remove/%'] = array(
-    'title' => 'Do you really want to remove the question?',
-    'description' => 'SimpleTest remove the question',
+    'title' => t('Do you really want to remove the question?'),
+    'description' => t('SimpleTest remove the question'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('simpletest_questions_remove_form', 5),
     'access arguments' => array('access administration pages'),
@@ -155,8 +157,8 @@ function simpletest_menu() {
    * 3.1. Page with form for editing answer
    */
   $items['admin/settings/simpletest/answers/edit/%'] = array(
-    'title' => 'Edit the answer',
-    'description' => 'SimpleTest edit the answer for the question',
+    'title' => t('Edit the answer'),
+    'description' => t('SimpleTest edit the answer for the question'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('simpletest_answers_edit_form', 5),
     'access arguments' => array('access administration pages'),
@@ -166,8 +168,8 @@ function simpletest_menu() {
    * 3.2. Page with form for adding new answer to the question
    */
   $items['admin/settings/simpletest/answers/add/%'] = array(
-    'title' => 'Add new answer',
-    'description' => 'Simpletest add new answer to the questioni',
+    'title' => t('Add new answer'),
+    'description' => t('Simpletest add new answer to the question'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('simpletest_answers_add_form', 5),
     'access arguments' => array('access administration pages'),
@@ -177,8 +179,8 @@ function simpletest_menu() {
    * 3.4. Page with button to confirm remove answer
    */
   $items['admin/settings/simpletest/answers/remove/%'] = array(
-    'title' => 'Do you really want to remove this answer?',
-    'description' => 'SimpleTest remove answer',
+    'title' => t('Do you really want to remove this answer?'),
+    'description' => t('SimpleTest remove answer'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('simpletest_answers_remove_form', 5),
     'access arguments' => array('access administration pages'),
@@ -222,7 +224,7 @@ function simpletest_menu() {
    * FIXME: remove this or do something
    */
   $items['view-settings'] = array(
-    'title' => 'View Configured Settings',
+    'title' => t('View Configured Settings'),
     'page callback' => 'simpletest_view_conf',
     'access arguments' => array('administer site configuration'),
     'type' => MENU_NORMAL_ITEM,

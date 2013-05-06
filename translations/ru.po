@@ -1,0 +1,377 @@
+# $Id$
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  simpletest.module: n/a
+#  simpletest.info: n/a
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2013-05-03 19:09+0400\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: simpletest.module:13
+msgid "Displays all created tests"
+msgstr "Показывает все созданные тесты"
+
+#: simpletest.module:51;62
+msgid "SimpleTest"
+msgstr "SimpleTest"
+
+#: simpletest.module:52
+msgid "Change SimpleTest settings"
+msgstr "Изменить настройки SimpleTest"
+
+#: simpletest.module:72
+msgid "Tests"
+msgstr "Тесты"
+
+#: simpletest.module:73
+msgid "Manage SimpleTest tests (add/remove/edit)"
+msgstr "Управление тестами (добавление/удаление/редактирование)"
+
+#: simpletest.module:81;82
+msgid "SimpleTest edit test"
+msgstr "Редактирование теста SimpleTest"
+
+#: simpletest.module:92
+msgid "SimpleTest add test"
+msgstr "Добавить тест SimpleTest"
+
+#: simpletest.module:93;139
+msgid "SimpleTest add new test"
+msgstr "Добавить новый тест SimpleTest"
+
+#: simpletest.module:105;106
+msgid "SimpleTest test summary"
+msgstr "Сводка о тесте SimpleTest"
+
+#: simpletest.module:116
+msgid "Do you really want to remove the test?"
+msgstr "Вы действительно хотите удалить тест?"
+
+#: simpletest.module:117
+msgid "SimpleTest remove test"
+msgstr "Удалить тест SimpleTest"
+
+#: simpletest.module:127
+msgid "Edit question"
+msgstr "Редактировать вопрос"
+
+#: simpletest.module:128
+msgid "Simpletest edit question"
+msgstr "Редактировать вопрос SimpleTest"
+
+#: simpletest.module:138
+msgid "Add new question"
+msgstr "Добавить новый вопрос"
+
+#: simpletest.module:193
+msgid "Results for the test"
+msgstr "Результаты теста"
+
+#: simpletest.module:194
+msgid "SimpleTest results for the test"
+msgstr "Результаты теста SimpleTest"
+
+#: simpletest.module:204
+msgid "Result for the test for group"
+msgstr "Результаты теста для группы"
+
+#: simpletest.module:205
+msgid "SimpleTest result for the test for group"
+msgstr "Результаты теста Simpletest для группы"
+
+#: simpletest.module:215
+msgid "Result for the test for user"
+msgstr "Результаты теста для пользователя"
+
+#: simpletest.module:216
+msgid "SimpleTest result for the test for user"
+msgstr "Результаты теста SimpleTest для пользователя"
+
+#: simpletest.module:279
+msgid "First name"
+msgstr "Имя"
+
+#: simpletest.module:284;1333
+msgid "Last name"
+msgstr "Фамилия"
+
+#: simpletest.module:289;1331
+msgid "Group"
+msgstr "Группа"
+
+#: simpletest.module:298
+msgid "Login"
+msgstr "Имя пользователя"
+
+#: simpletest.module:317
+msgid "Value must not be empty"
+msgstr "Значение не должно быть пустым"
+
+#: simpletest.module:321;625
+msgid "Only numeric values are allowed"
+msgstr "Допустимы только числовые значения"
+
+#: simpletest.module:324
+msgid "You are the bot. I'm sorry :("
+msgstr "Извините, но Вы - бот :("
+
+#: simpletest.module:336
+msgid "There is more than one user with this parameters. Contact the administrator"
+msgstr "Уже существует пользователь с такими данными. Сообщите администратору сайта"
+
+#: simpletest.module:468
+msgid "You finished this test!"
+msgstr "Вы закончили тест!"
+
+#: simpletest.module:500
+msgid "Skip"
+msgstr "Пропустить"
+
+#: simpletest.module:504;803
+msgid "Answer"
+msgstr "Ответить"
+
+#: simpletest.module:515
+msgid "You must select the answer"
+msgstr "Вы должны выбрать ответ"
+
+#: simpletest.module:566
+msgid "Test name"
+msgstr "Название теста"
+
+#: simpletest.module:567
+msgid "Discipline"
+msgstr "Предмет"
+
+#: simpletest.module:568
+msgid "Academic year"
+msgstr "Год обучения"
+
+#: simpletest.module:569;804
+msgid "Edit"
+msgstr "Редактировать"
+
+#: simpletest.module:570;805;923;1088;1279
+msgid "Remove"
+msgstr "Удалить"
+
+#: simpletest.module:571
+msgid "Results"
+msgstr "Результаты"
+
+#: simpletest.module:576
+msgid "<a href=\"!base_path/admin/settings/simpletest/tests/show/!tid\">!tname</a>"
+msgstr "<a href=\"!base_path/admin/settings/simpletest/tests/show/!tid\">!tname</a>"
+
+#: simpletest.module:583
+msgid "<a href=\"!base_path/admin/settings/simpletest/tests/edit/!tid\">Edit</a>"
+msgstr "<a href=\"!base_path/admin/settings/simpletest/tests/edit/!tid\">Редактировать</a>"
+
+#: simpletest.module:587
+msgid "<a href=\"!base_path/admin/settings/simpletest/tests/remove/!tid\">Remove</a>"
+msgstr "<a href=\"!base_path/admin/settings/simpletest/tests/remove/!tid\">Удалить</a>"
+
+#: simpletest.module:591
+msgid "<a href=\"!base_path/simpletest/results/!tid\">Results</a>"
+msgstr "<a href=\"!base_path/simpletest/results/!tid\">Результаты</a>"
+
+#: simpletest.module:598
+msgid "<a href=\"!base_path/admin/settings/simpletest/tests/add/\">Add test</a>"
+msgstr "<a href=\"!base_path/admin/settings/simpletest/tests/add/\">Добавить тест</a>"
+
+#: simpletest.module:613
+msgid "The name of the test cannot be empty"
+msgstr "Название теста не может быть пустым"
+
+#: simpletest.module:616
+msgid "The description of the test cannot be empty"
+msgstr "Описание теста не может быть пустым"
+
+#: simpletest.module:619
+msgid "The name of the discipline cannot be empty"
+msgstr "Название предмета не может быть пустым"
+
+#: simpletest.module:622
+msgid "The year cannot be empty"
+msgstr "Год не может быть пустым"
+
+#: simpletest.module:674;982
+msgid "Save"
+msgstr "Сохранить"
+
+#: simpletest.module:696
+msgid "The test has been successfully edited."
+msgstr "Тест был успешно отредактирован."
+
+#: simpletest.module:731;1029;1223
+msgid "Add"
+msgstr "Добавить"
+
+#: simpletest.module:765
+msgid "The test has been successfully added."
+msgstr "Тест был успешно добавлен."
+
+#: simpletest.module:802
+msgid "Correct"
+msgstr "Правильный"
+
+#: simpletest.module:828
+msgid "<span style=\"color: red\">You MUST have exactly one correct answer</span>"
+msgstr "<span style=\"color: red\">У Вас обязательно должен быть хотя бы один правильный ответ</span>"
+
+#: simpletest.module:842
+msgid "<a name=\"a!aid\"></a>!answer"
+msgstr "<a name=\"a!aid\"></a>!answer"
+
+#: simpletest.module:852
+msgid "<a href=\"!base_path/admin/settings/simpletest/answers/edit/!aid\">Edit</a>"
+msgstr "<a href=\"!base_path/admin/settings/simpletest/answers/edit/!aid\">Редактировать</a>"
+
+#: simpletest.module:862
+msgid "<a href=\"!base_path/admin/settings/simpletest/answers/remove/!aid\">Remove</a>"
+msgstr "<a href=\"!base_path/admin/settings/simpletest/answers/remove/!aid\">Удалить</a>"
+
+#: simpletest.module:875
+msgid "There is no answers for this question yet"
+msgstr "Пока нет ответов на данный вопрос"
+
+#: simpletest.module:884
+msgid "<a href=\"!base_path/admin/settings/simpletest/answers/add/!qid\">Add answer</a>"
+msgstr "<a href=\"!base_path/admin/settings/simpletest/answers/add/!qid\">Добавить ответ</a>"
+
+#: simpletest.module:939;1310
+msgid "The test has been successfully removed."
+msgstr "Тест был успешно удален."
+
+#: simpletest.module:992;1040
+msgid "The question cannot be empty"
+msgstr "Вопрос не может быть пустым"
+
+#: simpletest.module:1003
+msgid "The question has been successfully edited"
+msgstr "Вопрос был успешно отредактирован"
+
+#: simpletest.module:1047
+msgid "Test id is wrong, or test has been removed"
+msgstr "ID теста неправильный, или тест был удален"
+
+#: simpletest.module:1067
+msgid "The question has been successfylly added"
+msgstr "Вопрос был успешно добавлен"
+
+#: simpletest.module:1108
+msgid "The question has been successfully removed."
+msgstr "Вопрос был успешно удален"
+
+#: simpletest.module:1172
+msgid "Incorrect answer id"
+msgstr "Неправильно ID ответа"
+
+#: simpletest.module:1175;1234
+msgid "The answer cannot be empty"
+msgstr "Ответ не может быть пустым"
+
+#: simpletest.module:1332
+msgid "First Name"
+msgstr "Имя"
+
+#: simpletest.module:1337
+msgid "Question !i"
+msgstr "Вопрос !i"
+
+#: simpletest.module:1340
+msgid "Completed?"
+msgstr "Завершен?"
+
+#: simpletest.module:1341
+msgid "Score"
+msgstr "Итог"
+
+#: simpletest.module:1398
+msgid "Completed"
+msgstr "Завершено"
+
+#: simpletest.module:1400
+msgid "In progress"
+msgstr "В процессе"
+
+#: simpletest.module:1402
+msgid "!correct/!all"
+msgstr "!correct/!all"
+
+#: simpletest.module:1421
+msgid "Replacements"
+msgstr "Замены"
+
+#: simpletest.module:1423
+msgid "If you want to replace text \"<strong>[tex]</strong>\" with \n                          \"<strong>&lt;img src=/cgi-bin/tex.cgi?</strong>\"\n                          and \"<strong>[/tex]</strong>\" with \"<strong> /&gt;</strong>\"<br />\n                          just write it in JSON format like\n                          <code><br />\n                          {<br />\n                          &nbsp;&nbsp;\"[tex]\":\"&lt;img src=/cgi-bin/tex.cgi?\",<br />\n                          &nbsp;&nbsp;\"[/tex]\":\" /&lt;\"<br />\n                          }</code><br />"
+msgstr "Если Вы хотите заменить текст \"<strong>[tex]</strong>\" на \n                          \"<strong>&lt;img src=/cgi-bin/tex.cgi?</strong>\"\n                          и \"<strong>[/tex]</strong>\" на \"<strong> /&gt;</strong>\"<br />\n                          просто напишите это в формате JSON в виде\n                          <code><br />\n                          {<br />\n                          &nbsp;&nbsp;\"[tex]\":\"&lt;img src=/cgi-bin/tex.cgi?\",<br />\n                          &nbsp;&nbsp;\"[/tex]\":\" /&lt;\"<br />\n                          }</code><br />"
+
+#: simpletest.module:1454 simpletest.info:0
+msgid "Simple Test"
+msgstr ""
+
+#: simpletest.module:24
+msgid "access simpletest content"
+msgstr ""
+
+#: simpletest.module:25
+msgid "create simpletest"
+msgstr ""
+
+#: simpletest.module:26
+msgid "edit own simpletest"
+msgstr ""
+
+#: simpletest.module:149
+msgid "Do you really want to remove the question?"
+msgstr "Вы действительно хотите удалить вопрос?"
+
+#: simpletest.module:150
+msgid "SimpleTest remove the question"
+msgstr "Удалить вопрос SimpleTest"
+
+#: simpletest.module:160
+msgid "Edit the answer"
+msgstr "Редактировать ответ"
+
+#: simpletest.module:161
+msgid "SimpleTest edit the answer for the question"
+msgstr "Редактировать ответ на вопрос"
+
+#: simpletest.module:171
+msgid "Add new answer"
+msgstr "Добавить новый ответ"
+
+#: simpletest.module:172
+msgid "Simpletest add new answer to the question"
+msgstr "Добавить новый ответ на вопрос"
+
+#: simpletest.module:182
+msgid "Do you really want to remove this answer?"
+msgstr "Вы действительно хотите удалить этот ответ?"
+
+#: simpletest.module:183
+msgid "SimpleTest remove answer"
+msgstr "Удалить ответ"
+
+#: simpletest.module:227
+msgid "View Configured Settings"
+msgstr "Посмотреть настройки"
+
+#: simpletest.info:0
+msgid "Simple testing module"
+msgstr ""
+
